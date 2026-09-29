@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>思い出クイズ</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<style>
+  :root{
+    --bg1:#1b1440; --bg2:#2c1f5c;
+    --gold:#f0c25b; --gold-dim:#8a6f2c;
+    --panel:#241a4d; --panel-2:#2f2266;
+    --ink:#fbf6e8; --ink-dim:#b7aed6;
+    --ok:#5cbf7f; --soft:#7fa8c9;
+    --shadow:#00000055;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html,body{height:100%;}
+  *{box-sizing:border-box;}
+  body{
+    margin:0; color:var(--ink); font-family:'Zen Maru Gothic', sans-serif;
+    background:
+      radial-gradient(circle at 20% -10%, #ffffff22, transparent 40%),
+      radial-gradient(circle at 85% 0%, #ffffff18, transparent 35%),
+      linear-gradient(160deg, var(--bg1), var(--bg2));
+    display:flex; flex-direction:column; align-items:center;
+    padding:20px 14px 30px; gap:16px;
+  }
+  .marquee{
+    font-size:1.5rem; font-weight:900; letter-spacing:.08em; color:var(--gold);
+    text-shadow:0 0 14px #f0c25b66; text-align:center;
+  }
+  .progress-wrap{width:100%; max-width:480px;}
+  .progress-label{font-size:.85rem; color:var(--ink-dim); text-align:center; margin-bottom:4px;}
+  .progress-bar{height:8px; background:#00000044; border-radius:6px; overflow:hidden;}
+  .progress-fill{height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold)); transition:width .3s;}
+
+  .stage{
+    width:100%; max-width:480px; background:var(--panel);
+    border:2px solid var(--gold-dim); border-radius:20px;
+    box-shadow:0 8px 0 var(--shadow), 0 0 40px #00000055;
+    padding:26px 22px; display:flex; flex-direction:column; gap:16px; align-items:center;
+    position:relative; overflow:hidden; transition:box-shadow .3s;
+  }
+  .stage.flashOk{box-shadow:0 8px 0 var(--shadow), 0 0 0 4px var(--ok);}
+  .stage.flashSoft{box-shadow:0 8px 0 var(--shadow), 0 0 0 4px var(--soft);}
+  .qnum{font-size:.85rem; color:var(--gold); font-weight:700; letter-spacing:.06em;}
+  .question{
+    font-size:1.35rem; font-weight:700; text-align:center; line-height:1.6; min-height:3.2em;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .answerBtn{
+    font-family:inherit; font-size:1.05rem; font-weight:700; padding:13px 28px;
+    border-radius:30px; border:none; background:var(--gold); color:#241a4d;
+    box-shadow:0 3px 0 var(--gold-dim); cursor:pointer;
+  }
+  .answer{
+    font-size:1.2rem; font-weight:700; color:var(--gold); text-align:center;
+    min-height:1.6em; opacity:0; transform:translateY(6px); transition:all .35s;
+  }
+  .answer.show{opacity:1; transform:translateY(0);}
+
+  .judge-row{display:flex; gap:14px;}
+  .judge-row button{
+    font-family:inherit; font-size:1.05rem; font-weight:900; padding:14px 24px;
+    border-radius:16px; border:none; cursor:pointer; color:#fff;
+    box-shadow:0 4px 0 var(--shadow);
+  }
+  .ok-btn{background:linear-gradient(160deg, #6fd18f, var(--ok));}
+  .soft-btn{background:linear-gradient(160deg, #97c2e0, var(--soft));}
+
+  .nav-row{display:flex; gap:14px; width:100%; max-width:480px; justify-content:space-between;}
+  .nav-row button{
+    font-family:inherit; font-size:.95rem; font-weight:700; padding:11px 18px;
+    border-radius:24px; border:1px solid var(--gold-dim); background:var(--panel-2); color:var(--ink);
+    cursor:pointer;
+  }
+  .nav-row button:disabled{opacity:.35; cursor:default;}
+
+  .musicBtn{
+    font-family:inherit; font-size:.9rem; font-weight:700; padding:10px 18px;
+    border-radius:24px; border:1px solid var(--gold-dim); background:var(--panel-2); color:var(--gold);
+    cursor:pointer;
+  }
+
+  .confetti{
+    position:absolute; inset:0; pointer-events:none; overflow:hidden;
+  }
+  .confetti span{
+    position:absolute; top:-10%; font-size:1.4rem; animation:fall 1.4s ease-in forwards;
+  }
+  @keyframes fall{
+    to{ transform:translateY(320px) rotate(200deg); opacity:0; }
+  }
+  .layout{display:flex; flex-direction:column; align-items:center; gap:16px; width:100%;}
+  .side{display:contents;}
+  .marquee{order:0;} .progress-wrap{order:1;} .stage{order:2;} .nav-row{order:3;}
+  @media (orientation:landscape) and (max-height:600px){
+    body{padding:10px 14px; gap:8px;}
+    .layout{flex-direction:row; align-items:center; gap:18px; max-width:none;}
+    .side{display:flex; flex-direction:column; gap:12px; flex:0 0 34%; align-items:center;}
+    .marquee,.progress-wrap,.stage,.nav-row{order:0;}
+    .marquee{font-size:1.2rem;}
+    .progress-wrap,.nav-row{max-width:none; width:100%;}
+    .nav-row{flex-direction:column; gap:8px;}
+    .nav-row button{width:100%; padding:9px 12px;}
+    .stage{max-width:none; flex:1; padding:16px 18px; gap:12px;}
+    .question{font-size:1.3rem; min-height:2.6em;}
+  }
+</style>
+</head>
+<body>
+
+<div class="layout"><div class="side">
+<div class="marquee">✨ 思い出クイズ ✨</div>
+
+<div class="progress-wrap">
+  <div class="progress-label" id="progLabel">第 1 問 / 50問</div>
+  <div class="progress-bar"><div class="progress-fill" id="progFill" style="width:2%"></div></div>
+</div>
+<div class="nav-row">
+  <button id="prevBtn">◀ まえの問題</button>
+  <button class="musicBtn" id="musicBtn">🎵 音楽 OFF</button>
+  <button id="nextBtn">つぎの問題 ▶</button>
+</div>
+</div>
+<div class="stage" id="stage">
+  <div class="confetti" id="confetti"></div>
+  <div class="qnum" id="qnum">Q1</div>
+  <div class="question" id="question">よみこみちゅう…</div>
+  <button class="answerBtn" id="revealBtn">こたえを みる</button>
+  <div class="answer" id="answer"></div>
+  <div class="judge-row">
+    <button class="ok-btn" id="okBtn">🎉 せいかい！</button>
+    <button class="soft-btn" id="softBtn">🙂 おしい！</button>
+  </div>
+</div>
+</div>
+
+<script>
+const RAW = `一年に季節はいくつあるでしょう？||4つ（春・夏・秋・冬）
+お正月に食べる、おめでたい料理は？||おせち料理
+桃太郎は何から生まれた？||桃（もも）
+うさぎの耳は長い？短い？||長い
+1たす1は？||2
+信号で「止まれ」を表す色は？||赤
+犬の鳴き声は？||ワンワン
+猫の鳴き声は？||ニャーニャー
+日本で一番高い山は？||富士山
+七夕は何月何日？||7月7日
+おにぎりの定番の具といえば？||梅干しや鮭など
+桃太郎のお供は犬・猿ともう一匹は？||きじ
+一週間は何日？||7日
+浦島太郎が助けた生き物は？||亀（かめ）
+雪が降るのはどの季節？||冬
+朝顔が咲くのはどの季節？||夏
+お月見で食べるものは？||お月見だんご
+節分に投げるものは？||豆
+こどもの日にあげるものは？||こいのぼり
+りんごは何色が多い？||赤（や緑）
+バナナは何色？||黄色
+ぞうの鼻は長い？短い？||長い
+「うさぎとかめ」で勝ったのはどちら？||かめ
+おばあさんが桃を拾ったのは川？山？||川
+1年は何か月？||12か月
+にわとりの鳴き声は？||コケコッコー
+牛の鳴き声は？||モーモー
+顔にある、ものを見る場所は？||目
+手には指が何本ある？||5本
+すいかの季節は？||夏
+みかんの季節は？||冬
+お米が作られる場所は？||田んぼ
+お風呂に入るのは体を何するため？||体を洗う・温める
+花咲かじいさんが灰をまいたら咲いた花は？||桜
+太陽が昇るのは東？西？||東
+太陽が沈むのは東？西？||西
+一年で一番暑い季節は？||夏
+一年で一番寒い季節は？||冬
+おだんごの材料は主に何の粉？||お米（もち米）の粉
+にんじんは何色？||オレンジ色
+きゅうりは何色？||緑色
+すいかの中身は何色？||赤（や黄色）
+傘をさすのはどんな天気の日？||雨の日
+「もういくつ寝るとお正月」の歌、季節はいつ？||冬
+たんぽぽの花は何色？||黄色
+ひな祭りは何月何日？||3月3日
+おじいさん・おばあさんを敬う日といえば？||敬老の日
+お正月に鳴らす鐘は何回？||108回（除夜の鐘）
+おはしは何本で使う？||2本
+一日は何時間？||24時間`;
+
+const QUIZ = RAW.trim().split('\n').map((line,i)=>{
+  const [q,a]=line.split('||');
+  return {q:q.trim(), a:a.trim(), n:i+1};
+});
+const TOTAL = QUIZ.length;
+
+let idx=0;
+const stage=document.getElementById('stage');
+const qnumEl=document.getElementById('qnum');
+const qEl=document.getElementById('question');
+const aEl=document.getElementById('answer');
+const revealBtn=document.getElementById('revealBtn');
+const progLabel=document.getElementById('progLabel');
+const progFill=document.getElementById('progFill');
+const prevBtn=document.getElementById('prevBtn');
+const nextBtn=document.getElementById('nextBtn');
+const confettiWrap=document.getElementById('confetti');
+
+function render(){
+  const item=QUIZ[idx];
+  qnumEl.textContent='Q'+item.n;
+  qEl.textContent=item.q;
+  aEl.textContent=item.a;
+  aEl.classList.remove('show');
+  progLabel.textContent='第 '+item.n+' 問 / '+TOTAL+'問';
+  progFill.style.width=Math.round(item.n/TOTAL*100)+'%';
+  prevBtn.disabled = idx===0;
+  nextBtn.disabled = idx===TOTAL-1;
+  stage.classList.remove('flashOk','flashSoft');
+}
+render();
+
+revealBtn.addEventListener('click', ()=>{
+  aEl.classList.add('show');
+  playReveal();
+});
+prevBtn.addEventListener('click', ()=>{ if(idx>0){idx--; render();} });
+nextBtn.addEventListener('click', ()=>{ if(idx<TOTAL-1){idx++; render();} });
+
+document.getElementById('okBtn').addEventListener('click', ()=>{
+  playCorrect(); burstConfetti(); flash('flashOk');
+});
+document.getElementById('softBtn').addEventListener('click', ()=>{
+  playGentle(); flash('flashSoft');
+});
+function flash(cls){
+  stage.classList.remove('flashOk','flashSoft');
+  stage.classList.add(cls);
+  setTimeout(()=>stage.classList.remove(cls), 900);
+}
+function burstConfetti(){
+  const emojis=['🎉','⭐','🎊','✨'];
+  for(let i=0;i<10;i++){
+    const s=document.createElement('span');
+    s.textContent=emojis[Math.floor(Math.random()*emojis.length)];
+    s.style.left=(Math.random()*90)+'%';
+    s.style.animationDelay=(Math.random()*0.3)+'s';
+    confettiWrap.appendChild(s);
+    setTimeout(()=>s.remove(), 1700);
+  }
+}
+
+/* ---- 音楽・効果音（Tone.jsで生成、著作権フリー） ---- */
+let audioReady=false;
+let bgmSynth, bgmLoop, sfxSynth;
+function setupAudio(){
+  if(audioReady) return;
+  audioReady=true;
+  const reverb=new Tone.Reverb({decay:3, wet:0.3}).toDestination();
+  bgmSynth=new Tone.PolySynth(Tone.Synth,{
+    oscillator:{type:'triangle'},
+    envelope:{attack:0.4, decay:0.3, sustain:0.5, release:1.5}
+  }).connect(reverb);
+  bgmSynth.volume.value=-22;
+  sfxSynth=new Tone.Synth({oscillator:{type:'sine'}}).connect(reverb);
+
+  const chords=[['C4','E4','G4'],['F3','A3','C4'],['G3','B3','D4'],['C4','E4','G4']];
+  let ci=0;
+  bgmLoop=new Tone.Loop(time=>{
+    bgmSynth.triggerAttackRelease(chords[ci%chords.length], '2n', time);
+    ci++;
+  }, '1m').start(0);
+  Tone.Transport.bpm.value=96;
+}
+let musicOn=false;
+document.getElementById('musicBtn').addEventListener('click', async ()=>{
+  await Tone.start();
+  setupAudio();
+  if(!musicOn){
+    Tone.Transport.start();
+    musicOn=true;
+    document.getElementById('musicBtn').textContent='🎵 音楽 ON';
+  } else {
+    Tone.Transport.pause();
+    musicOn=false;
+    document.getElementById('musicBtn').textContent='🎵 音楽 OFF';
+  }
+});
+
+async function ensureAudio(){ await Tone.start(); setupAudio(); }
+
+async function playReveal(){
+  await ensureAudio();
+  const t=Tone.now();
+  sfxSynth.triggerAttackRelease('A5','16n', t);
+  sfxSynth.triggerAttackRelease('C6','8n', t+0.12);
+}
+async function playCorrect(){
+  await ensureAudio();
+  const t=Tone.now();
+  ['C5','E5','G5','C6'].forEach((n,i)=>sfxSynth.triggerAttackRelease(n,'8n', t+i*0.12));
+}
+async function playGentle(){
+  await ensureAudio();
+  const t=Tone.now();
+  sfxSynth.triggerAttackRelease('E4','8n', t);
+  sfxSynth.triggerAttackRelease('C4','4n', t+0.18);
+}
+</script>
+</body>
+</html>
