@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="なかまさがし">
+<meta name="theme-color" content="#faf3e6">
+<title>なかまさがし</title>
+<style>
+  :root{
+    --bg:#faf3e6;
+    --card-back:#e8967a;
+    --card-back-2:#f0ac93;
+    --card-face:#fffdf8;
+    --ink:#4a3f35;
+    --accent:#7fa88f;
+    --accent-2:#7fa8c9;
+    --matched:#8fbf8f;
+    --shadow:#00000022;
+    --card-size:100px;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html,body{height:100%;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px); -webkit-text-size-adjust:100%; text-size-adjust:100%;}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Hiragino Maru Gothic ProN','Hiragino Maru Gothic Pro','Zen Maru Gothic','Hiragino Kaku Gothic ProN','Yu Gothic',-apple-system,sans-serif;
+    padding:18px 14px 24px;
+    display:flex; align-items:center; justify-content:center;
+    touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none;
+  }
+  button{-webkit-appearance:none; appearance:none;}
+  .layout{
+    display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:24px; width:100%; max-width:1000px;
+  }
+  .side{
+    flex:0 0 220px; display:flex; flex-direction:column; gap:12px; align-items:center;
+    text-align:center;
+  }
+  h1{
+    font-size:1.6rem; font-weight:900; margin:0; letter-spacing:.04em; color:var(--ink);
+  }
+  .sub{font-size:.9rem; color:#8a7f70;}
+
+  .levels{display:flex; gap:8px; flex-wrap:wrap; justify-content:center;}
+  .levels button{
+    font-family:inherit; font-size:.95rem; font-weight:700; padding:10px 18px;
+    border-radius:30px; border:none; background:#fff; color:var(--ink);
+    box-shadow:0 3px 0 var(--shadow); cursor:pointer;
+  }
+  .levels button.active{background:var(--accent); color:#fff;}
+
+  .status{font-size:1.05rem; font-weight:700; min-height:1.6em; text-align:center; color:var(--ink);}
+
+  .grid-wrap{flex:1 1 auto; display:flex; justify-content:center; align-items:center;}
+  .grid{
+    display:grid; gap:10px; justify-content:center;
+  }
+  .card{
+    width:var(--card-size); height:var(--card-size); border-radius:16px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg, var(--card-back), var(--card-back-2));
+    box-shadow:0 4px 0 var(--shadow);
+    font-size:2.4rem; transition:transform .25s, background .25s;
+    user-select:none; -webkit-user-select:none; position:relative;
+  }
+  .card .mark{color:#fff; font-size:2rem; font-weight:900;}
+  .card.flipped, .card.matched{
+    background:var(--card-face);
+    box-shadow:0 2px 0 var(--shadow);
+  }
+  .card.matched{background:var(--matched); }
+  .card.wrong{animation:shake .4s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  .controls{display:flex; gap:12px;}
+  .controls button{
+    font-family:inherit; font-size:.95rem; font-weight:700; padding:11px 22px;
+    border-radius:30px; border:none; background:var(--accent-2); color:#fff;
+    box-shadow:0 3px 0 var(--shadow); cursor:pointer;
+  }
+
+  .overlay{
+    position:fixed; top:0; right:0; bottom:0; left:0; background:#faf3e6ee; display:none;
+    align-items:center; justify-content:center; flex-direction:column; gap:18px; z-index:5;
+    text-align:center; padding:20px;
+  }
+  .overlay.show{display:flex;}
+  .overlay h2{font-size:1.9rem; color:var(--accent); font-weight:900;}
+  .overlay p{font-size:1.1rem; color:var(--ink);}
+
+  @media (orientation:landscape) and (max-height:520px){
+    :root{--card-size:64px;}
+    body{padding:10px 14px;}
+    .layout{gap:16px;}
+    .side{flex-basis:180px; gap:8px;}
+    h1{font-size:1.2rem;}
+    .sub{display:none;}
+    .levels button{padding:7px 12px; font-size:.8rem;}
+    .status{font-size:.85rem; min-height:1.2em;}
+    .card .mark{font-size:1.4rem;}
+    .grid{gap:7px;}
+    .controls button{padding:8px 16px; font-size:.8rem;}
+  }
+
+  @media (max-width:480px) and (orientation:portrait){
+    :root{--card-size:78px;}
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#2a251e; --ink:#f3ead8; --card-face:#3a332a;
+    }
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<div class="layout">
+  <div class="side">
+    <h1>なかまさがし</h1>
+    <div class="sub">同じ絵のカードを2まいめくりましょう</div>
+    <div class="levels">
+      <button data-n="3" class="active">かんたん(3組)</button>
+      <button data-n="4">ふつう(4組)</button>
+      <button data-n="6">むずかしい(6組)</button>
+    </div>
+    <div class="status" id="status">カードをタップしてめくってください</div>
+    <div class="controls">
+      <button id="resetBtn">もう一度あそぶ</button>
+      <button id="musicBtn">🎵 音楽 OFF</button>
+    </div>
+  </div>
+  <div class="grid-wrap">
+    <div class="grid" id="grid"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <h2>ぜんぶ そろいました！</h2>
+  <p id="overlayMsg">すばらしいです！</p>
+  <button onclick="startGame(currentN)" style="font-family:inherit;font-size:1.1rem;font-weight:700;padding:14px 30px;border-radius:30px;border:none;background:var(--accent);color:#fff;box-shadow:0 3px 0 var(--shadow);cursor:pointer;">つづける</button>
+</div>
+
+<script>
+/* ---- 軽量サウンドエンジン (Web Audio API / 外部ライブラリ不要・Safari対応) ---- */
+const WA=(()=>{
+  let ctx=null,out=null,bgmMaster=null,timer=null,stepFn=null,stepDur=.25,nextT=0,step=0;
+  const B={};
+  const BASE={C:0,D:2,E:4,F:5,G:7,A:9,B:11};
+  function hz(n){
+    if(typeof n==='number') return n;
+    const m=/^([A-G])([#b]?)(-?\d)$/.exec(n);
+    const midi=12*(+m[3]+1)+BASE[m[1]]+(m[2]==='#'?1:m[2]==='b'?-1:0);
+    return 440*Math.pow(2,(midi-69)/12);
+  }
+  function impulse(sec){
+    const n=Math.floor(ctx.sampleRate*sec), b=ctx.createBuffer(2,n,ctx.sampleRate);
+    for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3); }
+    return b;
+  }
+  function chain(dest,send,decay){
+    const input=ctx.createGain(); input.connect(dest);
+    if(send>0){
+      const s=ctx.createGain(); s.gain.value=send;
+      const c=ctx.createConvolver(); c.buffer=impulse(decay);
+      input.connect(s); s.connect(c); c.connect(dest);
+    }
+    return input;
+  }
+  function init(){
+    if(ctx) return true;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC) return false;
+    try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){} /* iOSのサイレントスイッチ対策 */
+    ctx=new AC();
+    const comp=ctx.createDynamicsCompressor();
+    out=ctx.createGain(); out.gain.value=.9; out.connect(comp); comp.connect(ctx.destination);
+    bgmMaster=ctx.createGain(); bgmMaster.gain.value=0; bgmMaster.connect(out);
+    B.dry=out;
+    B.sfx=chain(out,.3,2);
+    B.bgmDry=bgmMaster;
+    B.bgm=chain(bgmMaster,.5,3);
+    const pf=ctx.createBiquadFilter(); pf.type='lowpass'; pf.frequency.value=1200; pf.connect(B.bgm); B.pad=pf;
+    try{ const s=ctx.createBufferSource(); s.buffer=ctx.createBuffer(1,1,22050); s.connect(ctx.destination); s.start(0); }catch(e){} /* iOSアンロック */
+    return true;
+  }
+  /* ユーザー操作(タップ/クリック)の中で呼ぶこと */
+  function unlock(){
+    if(!init()) return Promise.resolve(false);
+    try{ if(ctx.state!=='running') return ctx.resume().then(()=>true,()=>false); }catch(e){}
+    return Promise.resolve(true);
+  }
+  function now(){ return ctx?ctx.currentTime:0; }
+  function note(n,o){
+    if(!ctx) return; o=o||{};
+    const t=o.at!==undefined?o.at:ctx.currentTime;
+    const a=o.a!==undefined?o.a:.01, hold=o.hold||0, r=o.r!==undefined?o.r:.3, vol=o.vol!==undefined?o.vol:.1;
+    const osc=ctx.createOscillator(); osc.type=o.type||'sine'; osc.frequency.value=hz(n);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(.0001,t);
+    g.gain.linearRampToValueAtTime(vol,t+a);
+    g.gain.setValueAtTime(vol,t+a+hold);
+    g.gain.exponentialRampToValueAtTime(.0001,t+a+hold+r);
+    osc.connect(g); g.connect(o.bus||B.sfx);
+    osc.start(t); osc.stop(t+a+hold+r+.05);
+  }
+  function drum(n,o){
+    if(!ctx) return; o=o||{};
+    const t=o.at!==undefined?o.at:ctx.currentTime, f=hz(n), vol=o.vol!==undefined?o.vol:.4, dur=o.dur||.45;
+    const osc=ctx.createOscillator(); osc.type='sine';
+    osc.frequency.setValueAtTime(f*8,t); osc.frequency.exponentialRampToValueAtTime(f,t+.06);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+.003); g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    osc.connect(g); g.connect(o.bus||B.dry);
+    osc.start(t); osc.stop(t+dur+.05);
+  }
+  function bell(n,o){
+    if(!ctx) return; o=o||{};
+    const t=o.at!==undefined?o.at:ctx.currentTime, f=hz(n), vol=o.vol!==undefined?o.vol:.16, dur=o.dur||1;
+    const c=ctx.createOscillator(); c.type='sine'; c.frequency.value=f;
+    const m=ctx.createOscillator(); m.type='sine'; m.frequency.value=f*3;
+    const mg=ctx.createGain();
+    mg.gain.setValueAtTime(f*2.5,t); mg.gain.exponentialRampToValueAtTime(f*.2,t+.5);
+    m.connect(mg); mg.connect(c.frequency);
+    const g=ctx.createGain();
+    g.gain.setValueAtTime(.0001,t); g.gain.linearRampToValueAtTime(vol,t+.008);
+    g.gain.exponentialRampToValueAtTime(.0001,t+.1+dur);
+    c.connect(g); g.connect(o.bus||B.sfx);
+    c.start(t); m.start(t); c.stop(t+dur+.15); m.stop(t+dur+.15);
+  }
+  /* BGM: stepFn(step,time) を stepSec ごとに先読みスケジュール */
+  function bgm(fn,sec){ stepFn=fn; stepDur=sec; step=0; }
+  function tick(){
+    if(!ctx||ctx.state!=='running'||!stepFn) return;
+    const t0=ctx.currentTime;
+    if(nextT<t0) nextT=t0+.05;
+    while(nextT<t0+.3){ stepFn(step,nextT); step++; nextT+=stepDur; }
+  }
+  function bgmOn(){
+    if(!ctx||!stepFn) return;
+    if(!timer){ nextT=ctx.currentTime+.1; timer=setInterval(tick,100); }
+    bgmMaster.gain.cancelScheduledValues(ctx.currentTime);
+    bgmMaster.gain.setTargetAtTime(1,ctx.currentTime,.05);
+  }
+  function bgmOff(){
+    if(!ctx) return;
+    bgmMaster.gain.cancelScheduledValues(ctx.currentTime);
+    bgmMaster.gain.setTargetAtTime(0,ctx.currentTime,.08);
+    if(timer){ clearInterval(timer); timer=null; }
+  }
+  /* 画面を閉じた/バックグラウンドの間は止め、戻ったら再開 */
+  document.addEventListener('visibilitychange',()=>{
+    if(!ctx) return;
+    try{ if(document.hidden) ctx.suspend(); else ctx.resume(); }catch(e){}
+  });
+  addEventListener('pointerdown',()=>{ if(ctx&&!document.hidden&&ctx.state!=='running'){ try{ctx.resume();}catch(e){} } },{passive:true});
+  return {unlock,now,note,drum,bell,bgm,bgmOn,bgmOff,bus:B,ready:()=>!!ctx};
+})();
+
+
+const EMOJI_POOL=['🍎','🍊','🍇','🍓','🍌','🌸','🐶','🐱','🐦','🌻','⭐','🍑','🍉','🐟','🍡','☕'];
+const grid=document.getElementById('grid');
+const statusEl=document.getElementById('status');
+const overlay=document.getElementById('overlay');
+let currentN=3;
+let cards=[];
+let flipped=[];
+let matchedCount=0;
+let busy=false;
+
+document.querySelectorAll('.levels button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.levels button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    startGame(parseInt(btn.dataset.n,10));
+  });
+});
+document.getElementById('resetBtn').addEventListener('click',()=>startGame(currentN));
+
+/* ---- チルBGM(生成音楽) ---- */
+const musicBtn=document.getElementById('musicBtn');
+let musicOn=false, musicReady=false;
+const CHORDS=[
+  ['C4','E4','G4','B4'],
+  ['A3','C4','E4','G4'],
+  ['F3','A3','C4','E4'],
+  ['G3','B3','D4','F4']
+];
+const PENTATONIC=['C4','D4','E4','G4','A4','C5','D5','E5'];
+
+function setupMusic(){
+  if(musicReady) return;
+  musicReady=true;
+  /* 1ステップ = 2分音符 (BPM64 → 1.875秒)。4ステップごとにコード、毎ステップ55%でメロディ */
+  WA.bgm((step,t)=>{
+    if(step%4===0){
+      CHORDS[(step/4)%CHORDS.length].forEach(n=>
+        WA.note(n,{at:t,type:'sine',a:1.8,hold:3.6,r:3,vol:.07,bus:WA.bus.pad}));
+    }
+    if(Math.random()<0.55){
+      const note=PENTATONIC[Math.floor(Math.random()*PENTATONIC.length)];
+      WA.note(note,{at:t+.9375,type:'triangle',a:.02,hold:0,r:.9,vol:.12,bus:WA.bus.bgm});
+    }
+  },1.875);
+}
+
+musicBtn.addEventListener('click', ()=>{
+  WA.unlock();
+  setupMusic();
+  if(!musicOn){
+    WA.bgmOn();
+    musicOn=true;
+    musicBtn.textContent='🎵 音楽 ON';
+  } else {
+    WA.bgmOff();
+    musicOn=false;
+    musicBtn.textContent='🎵 音楽 OFF';
+  }
+});
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function colsFor(n){
+  const total=n*2;
+  if(total<=6) return 3;
+  if(total<=8) return 4;
+  return 4;
+}
+
+function startGame(n){
+  currentN=n;
+  overlay.classList.remove('show');
+  const chosen=shuffle([...EMOJI_POOL]).slice(0,n);
+  const deck=shuffle([...chosen,...chosen]);
+  cards=deck.map((emo,i)=>({id:i,num:i+1,emo,flipped:false,matched:false}));
+  flipped=[]; matchedCount=0; busy=false;
+  grid.style.gridTemplateColumns='repeat('+colsFor(n)+', var(--card-size))';
+  grid.innerHTML='';
+  cards.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='card';
+    div.innerHTML='<span class="mark">'+c.num+'</span>';
+    div.addEventListener('click',()=>onCardClick(c,div));
+    c.el=div;
+    grid.appendChild(div);
+  });
+  statusEl.textContent='カードをタップしてめくってください';
+}
+
+function onCardClick(c,div){
+  if(busy || c.flipped || c.matched) return;
+  c.flipped=true;
+  div.classList.add('flipped');
+  div.innerHTML=c.emo;
+  flipped.push(c);
+  if(flipped.length===2){
+    busy=true;
+    const [a,b]=flipped;
+    if(a.emo===b.emo){
+      a.matched=b.matched=true;
+      a.el.classList.add('matched'); b.el.classList.add('matched');
+      matchedCount++;
+      statusEl.textContent='せいかい！ よくできました';
+      flipped=[]; busy=false;
+      if(matchedCount===currentN){
+        setTimeout(()=>{
+          overlay.classList.add('show');
+        },500);
+      }
+    } else {
+      statusEl.textContent='おしい！ もういちど';
+      a.el.classList.add('wrong'); b.el.classList.add('wrong');
+      setTimeout(()=>{
+        a.flipped=b.flipped=false;
+        a.el.classList.remove('flipped','wrong');
+        b.el.classList.remove('flipped','wrong');
+        a.el.innerHTML='<span class="mark">'+a.num+'</span>';
+        b.el.innerHTML='<span class="mark">'+b.num+'</span>';
+        flipped=[]; busy=false;
+        statusEl.textContent='カードをタップしてめくってください';
+      },1300);
+    }
+  }
+}
+
+startGame(currentN);
+</script>
+</body>
+</html>

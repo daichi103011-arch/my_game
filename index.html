@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="あそびば">
+<meta name="theme-color" content="#faf3e6">
+<title>あそびば</title>
+<style>
+  :root{
+    --bg:#faf3e6; --ink:#4a3f35; --sub:#8a7f70; --shadow:#00000022;
+    box-sizing:border-box;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  html,body{min-height:100%;}
+  html{-webkit-text-size-adjust:100%; text-size-adjust:100%; background:var(--bg);}
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:'Hiragino Maru Gothic ProN','Hiragino Maru Gothic Pro','Zen Maru Gothic','Hiragino Kaku Gothic ProN','Yu Gothic',-apple-system,sans-serif;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:28px 16px 36px; gap:22px;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
+  }
+  header{text-align:center;}
+  h1{margin:0; font-size:2.2rem; font-weight:900; letter-spacing:.12em;}
+  .lead{margin:8px 0 0; font-size:.95rem; color:var(--sub);}
+  .menu{display:flex; flex-direction:column; gap:16px; width:100%; max-width:420px;}
+  a.game{
+    display:flex; align-items:center; gap:16px; text-decoration:none; color:#fff;
+    padding:18px 20px; border-radius:22px; box-shadow:0 6px 0 var(--shadow);
+    transition:transform .08s, box-shadow .08s;
+  }
+  a.game:active{transform:translateY(4px); box-shadow:0 2px 0 var(--shadow);}
+  a.game .icon{font-size:2.6rem; line-height:1; flex:0 0 auto;}
+  a.game .name{font-size:1.35rem; font-weight:900; letter-spacing:.04em;}
+  a.game .desc{font-size:.85rem; font-weight:500; opacity:.92; margin-top:3px; line-height:1.4;}
+  .g1{background:linear-gradient(160deg,#e8967a,#f0ac93);}
+  .g2{background:linear-gradient(160deg,#3a2b78,#5a46a8);}
+  .g3{background:linear-gradient(160deg,#d5574f,#c2413a);}
+  footer{font-size:.8rem; color:var(--sub); text-align:center; line-height:1.6;}
+  @media (orientation:landscape) and (max-height:520px){
+    body{padding:12px 16px; gap:10px;}
+    h1{font-size:1.4rem;} .lead{display:none;}
+    .menu{flex-direction:row; max-width:none; gap:10px;}
+    a.game{flex:1; flex-direction:column; text-align:center; padding:12px 8px; gap:6px;}
+    a.game .icon{font-size:1.8rem;} a.game .name{font-size:1rem;} a.game .desc{display:none;}
+    footer{display:none;}
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#2a251e; --ink:#f3ead8; --sub:#b8ab96;}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>あそびば</h1>
+    <p class="lead">あそびたいゲームをタップしてください</p>
+  </header>
+
+  <nav class="menu">
+    <a class="game g1" href="nakamagasaki.html">
+      <span class="icon">🃏</span>
+      <span><div class="name">なかまさがし</div><div class="desc">同じ絵のカードを2まいめくる神経衰弱</div></span>
+    </a>
+    <a class="game g2" href="quiz.html">
+      <span class="icon">✨</span>
+      <span><div class="name">思い出クイズ</div><div class="desc">50問の声かけクイズ。こたえをめくって楽しもう</div></span>
+    </a>
+    <a class="game g3" href="sumo.html">
+      <span class="icon">🥋</span>
+      <span><div class="name">ミニ相撲</div><div class="desc">連打で相手を土俵の外へ！3番勝負</div></span>
+    </a>
+  </nav>
+
+  <footer>ゲームから戻るときは、Safariの「&lt; 戻る」ボタンを使ってください</footer>
+</body>
+</html>
